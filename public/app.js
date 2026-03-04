@@ -9,7 +9,7 @@ const CONFIG = {
     API_BASE: 'https://auto-repair-hub-api.liu82ni.workers.dev',
     
     // 搜索源配置
-    SEARCH_ENGINES: [
+    SEARCH_ENGINES: [   SEARCH_ENGINES:(
         { name: '百度', url: 'https://www.baidu.com/s?wd=' },
         { name: '必应', url: 'https://www.bing.com/search?q=' },
         { name: 'Google', url: 'https://www.google.com/search?q=' }
@@ -45,7 +45,7 @@ const CATEGORIES = [
         ]
     },
     {
-        id: 'japanese',
+        id: 'japanese',   id:“日本”,
         name: '日系车',
         icon: 'fa-car-side',
         brands: [
@@ -57,7 +57,7 @@ const CATEGORIES = [
         ]
     },
     {
-        id: 'american',
+        id: 'american',   id:“美国”,
         name: '美系车',
         icon: 'fa-truck',
         brands: [
@@ -767,6 +767,26 @@ async function init() {
     bindEvents();
 }
 
+// 渲染分类列表
+function renderCategories() {
+    elements.categoryList.innerHTML = CATEGORIES.map(category => `
+        <div class="category-item">
+            <div class="category-header">
+                <i class="fas ${category.icon}"></i>
+                <span>${category.name}</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="subcategory-list">
+                ${category.brands.map(brand => `
+                    <div class="subcategory-item" data-brand="${brand.id}">
+                        ${brand.name}
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `).join('');
+}
+
 // 渲染资源卡片（UI 优化版）
 function renderResources(brandFilter = null) {
     let resources = RESOURCES_DB;
@@ -1080,83 +1100,83 @@ function copyLink(url) {
 }
 
 // ====================== 事件绑定 ======================
-function bindEvents() {
+function bindEvents() {   函数bindEvents() {
     // 搜索
-    elements.searchBtn.addEventListener('click', () => {
+    elements.searchBtn.addEventListener('click', () => {elements   元素.searchBtn。addEventListener('click'   “点击”, () => {
         performSearch(elements.searchInput.value);
     });
     
-    elements.searchInput.addEventListener('keypress', (e) => {
+    elements.searchInput.addEventListener('keypress', (e) => {elements   元素.searchInput。addEventListener('keypress'   键盘按键的, (e) => {
         if (e.key === 'Enter') {
             performSearch(elements.searchInput.value);
         }
     });
     
     // 过滤器
-    elements.searchFilters.forEach(filter => {
-        filter.addEventListener('click', () => {
-            elements.searchFilters.forEach(f => f.classList.remove('active'));
-            filter.classList.add('active');
+    elements.searchFilters.forEach(filter => {elements   元素.searchFilters。forEach   searchfilter。forEach(filter   过滤器 => {
+        filter.addEventListener('click', () => {过滤器。addEventListener('click'   “点击”, () => {filter   过滤器.addEventListener('click'   “点击”, () => {过滤器。addEventListener('click'   “点击”   “点击”, () => {
+            elements.searchFilters.forEach(f => f.classList.remove('active'));elements   元素.searchFilters。forEach   searchfilter。forEach(f => f. classlist   班级名册 .remove   删除('active'   “活跃”))；
+            filter.classList.add('active');filter   过滤器.classList   班级名册.add   添加(“活跃的”);
             state.currentFilter = filter.dataset.filter;
             
-            if (!state.isSearching) {
+            if (!state.isSearching) {   如果(!状态。isSearching) {
                 renderResources();
             }
         });
     });
     
     // 分类展开/收起
-    elements.categoryList.addEventListener('click', (e) => {
-        const header = e.target.closest('.category-header');
-        if (header) {
-            header.classList.toggle('expanded');
-            const subList = header.nextElementSibling;
-            subList.classList.toggle('show');
+    elements.categoryList.addEventListener('click', (e) => {elements   元素.categoryList.addEventListener('click'   “点击”, (e) => {elements   元素.categoryList.addEventListener('click'   “点击”, (e) => {elements   元素 .categoryList.addEventListener('click'   “点击”, (e) => {
+        const header = e.target.closest('.category-header');Const header   头 = e.a rtarget .close   关闭 ('.category-header'   “.category   类别-header”   header”   header”   header”   header”   header”   header”   header”   header”   header”   header”   header”   header”   header”)；
+        if   如果   如果 (header      头头) {
+            header      头头.classList   班级名册   班级名册.toggle   切换   切换('expanded'   “扩展”   “扩展”);header      头头.classList   班级名册   班级名册.toggle   切换   切换(扩大);
+            const   常量   子表 subList      子表子表 = header   头.nextElementSibling;const   常量   子表 subList      子表子表 = header   头.nextElementSibling；   nextElementSibling;
+            subList.classList.toggle('show');subList   子表.classList   班级名册.toggle   切换(显示);
         }
         
-        const   常量 subItem = e.target   目标.closest   最亲密的('.subcategory-item'   “.subcategory   子类别-item”   item”   item”   item”   item”   item”   item”);
-        if   如果 (subItem) {
-            document   文档.querySelectorAll('.subcategory-item'   “.subcategory   子类别-item”   item”   item”   item”   item”   item”   item”).forEach(i      我我 => i   我.classList   班级名册.remove   删除('active'   “活跃”));document   文档.querySelectorAll(“.subcategory   子类别-item”   item”)。forEach(i   我 => i   我. classlist   班级名册 .remove   删除('active'   “活跃”))；
-            subItem.classList.add('active');subItem.classList   班级名册.add   添加(“活跃的”);
+        const subItem = e.target.closest('.subcategory-item');const   常量 subItem = e.target   目标.close   关闭 ('.subcategory-item'   “.subcategory   子类别-item”   item”   item”   item”   item”   item”   item”   item”   item”   item”   item”   item”   item”   item”   item”   item”   item”   item”   item”   item”   item”   item”   item”   item”   item”   item”   item”   item”   item”   item”   item”   item”)；
+        if (subItem) {
+            document.querySelectorAll('.subcategory-item').forEach(i => i.classList.remove('active'));document   文档.querySelectorAll(“.subcategory   子类别-item”   item”)。forEach(i   我 => i   我. classlist   班级名册 .remove   删除('active'   “活跃”))；document.querySelectorAll('.subcategory-item'   “.subcategory   子类别-item”   item”   item”   item”   item”   item”   item”).forEach(i      我我 => i   我.classList   班级名册.remove   删除('active'   “活跃”));document      文档文档.querySelectorAll(“.subcategory   子类别   子类别-item”      item”item”)。forEach(i      我我 => i      我我. classlist   班级名册   班级名册 .remove   删除   删除('active'   “活跃”   “活跃”))；
+            subItem.classList.add('active');subItem.classList   班级名册.add   添加(“活跃的”);subItem.classList   班级名册.add   添加('active'   “活跃”);subItem.classList   班级名册   班级名册.add   添加   添加(“活跃的”);
             
             const brand = subItem.dataset.brand;const   常量   品牌 brand      品牌品牌 = subItem.dataset   数据集.brand；   品牌;
             elements.contentTitle.textContent = `${subItem.textContent} 相关资源`;
-            elements.searchResults.classList.remove('active');elements   元素.searchResults.classList   班级名册.remove   删除(“活跃的”);
-            elements.resourceGrid.style.display = 'grid';elements   元素. resourcgrid .style   风格.display   显示 = 'grid'   “网格”；
+            elements.searchResults.classList.remove('active');elements   元素.searchResults.classList   班级名册.remove   删除(“活跃的”);elements   元素.searchResults.classList   班级名册.remove   删除('active'   “活跃”);elements      元素元素.searchResults.classList   班级名册   班级名册.remove   删除   删除(“活跃的”);
+            elements.resourceGrid.style.display = 'grid';elements   元素. resourcgrid .style   风格.display   显示 = 'grid'   “网格”；elements.resourceGrid.style   风格.display   显示 = 'grid'   “网格”;elements      元素元素. resourcgrid .style   风格   风格.display   显示   显示 = 'grid'   “网格”   “网格”；
             renderResources(brand);   renderResources(品牌);
         }
     });
     
     // 模态框
-    elements.modalClose.addEventListener('click', () => {elements   元素.modalClose。addEventListener('click'   “点击”, () => {
-        elements.previewModal.classList.remove('active');elements   元素.previewModal.classList   班级名册.remove   删除(“活跃的”);
+    elements.modalClose.addEventListener('click', () => {elements   元素.modalClose。addEventListener('click'   “点击”, () => {elements   元素.modalClose.addEventListener('click'   “点击”, () => {elements      元素元素.modalClose。addEventListener('click'   “点击”   “点击”, () => {
+        elements   元素.previewModal.classList   班级名册.remove   删除('active'   “活跃”);elements      元素元素.previewModal.classList   班级名册   班级名册.remove   删除   删除(“活跃的”);elements      元素元素.previewModal.classList   班级名册   班级名册.remove   删除   删除('active'   “活跃”   “活跃”);elements         元素元素元素.previewModal.classList   班级名册   班级名册   班级名册.remove   删除   删除   删除(“活跃的”);
         elements.previewFrame.src = '';
     });
     
-    elements.previewModal.addEventListener('click', (e) => {elements   元素.previewModal。addEventListener('click'   “点击”, (e) => {
+    elements.previewModal.addEventListener('click', (e) => {elements   元素.previewModal。addEventListener('click'   “点击”, (e) => {elements   元素.previewModal.addEventListener('click'   “点击”, (e) => {elements      元素元素.previewModal。addEventListener('click'   “点击”   “点击”, (e) => {
         if (e.target === elements.previewModal) {If    如果（e.t rtarget === elements）。previewModal   元素)。previewModal) {
-            elements.previewModal.classList.remove('active');elements   元素.previewModal.classList   班级名册.remove   删除(“活跃的”);
+            elements.previewModal.classList.remove('active');elements   元素.previewModal.classList   班级名册.remove   删除(“活跃的”);elements   元素.previewModal.classList   班级名册.remove   删除('active'   “活跃”);elements      元素元素.previewModal.classList   班级名册   班级名册.remove   删除   删除(“活跃的”);elements   元素.previewModal.classList   班级名册.remove   删除('active'   “活跃”);elements      元素元素.previewModal.classList   班级名册   班级名册.remove   删除   删除(“活跃的”);elements      元素元素.previewModal.classList   班级名册   班级名册.remove   删除   删除('active'   “活跃”   “活跃”);elements         元素元素元素.previewModal.classList   班级名册   班级名册   班级名册.remove   删除   删除   删除(“活跃的”);
             elements.previewFrame.src = '';
         }
     });
     
     // 收藏面板
-    elements.favoritesBtn.addEventListener('click', () => {elements   元素.favoritesBtn。addEventListener('click'   “点击”, () => {
-        elements.favoritesPanel.classList.add('active');elements   元素.favoritesPanel.classList   班级名册.add   添加(“活跃的”);
+    elements.favoritesBtn.addEventListener('click', () => {elements   元素.favoritesBtn。addEventListener('click'   “点击”, () => {elements   元素.favoritesBtn.addEventListener('click'   “点击”, () => {elements      元素元素.favoritesBtn。addEventListener('click'   “点击”   “点击”, () => {elements   元素.favoritesBtn.addEventListener('click'   “点击”, () => {elements      元素元素.favoritesBtn。addEventListener('click'   “点击”   “点击”, () => {elements      元素元素.favoritesBtn.addEventListener('click'   “点击”   “点击”, () => {elements         元素元素元素.favoritesBtn。addEventListener('click'   “点击”   “点击”   “点击”, () => {elements   元素.favoritesBtn.addEventListener('click'   “点击”, () => {elements      元素元素.favoritesBtn。addEventListener('click'   “点击”   “点击”, () => {elements      元素元素.favoritesBtn.addEventListener('click'   “点击”   “点击”, () => {elements         元素元素元素.favoritesBtn。addEventListener('click'   “点击”   “点击”   “点击”, () => {elements      元素元素.favoritesBtn.addEventListener('click'   “点击”   “点击”, () => {elements         元素元素元素.favoritesBtn。addEventListener('click'   “点击”   “点击”   “点击”, () => {elements         元素元素元素.favoritesBtn.addEventListener('click'   “点击”   “点击”   “点击”, () => {elements            元素元素元素元素.favoritesBtn。addEventListener('click'   “点击”   “点击”   “点击”   “点击”, () => {
+        elements.favoritesPanel.classList.add('active');elements   元素.favoritesPanel.classList   班级名册.add   添加(“活跃的”);elements   元素.favoritesPanel.classList   班级名册.add   添加('active'   “活跃”);elements      元素元素.favoritesPanel.classList   班级名册   班级名册.add   添加   添加(“活跃的”);elements   元素.favoritesPanel.classList   班级名册.add   添加('active'   “活跃”);elements      元素元素.favoritesPanel.classList   班级名册   班级名册.add   添加   添加(“活跃的”);elements      元素元素.favoritesPanel.classList   班级名册   班级名册.add   添加   添加('active'   “活跃”   “活跃”);elements         元素元素元素.favoritesPanel.classList   班级名册   班级名册   班级名册.add   添加   添加   添加(“活跃的”);elements   元素.favoritesPanel.classList   班级名册.add   添加('active'   “活跃”);elements      元素元素.favoritesPanel.classList   班级名册   班级名册.add   添加   添加(“活跃的”);elements      元素元素.favoritesPanel.classList   班级名册   班级名册.add   添加   添加('active'   “活跃”   “活跃”);elements         元素元素元素.favoritesPanel.classList   班级名册   班级名册   班级名册.add   添加   添加   添加(“活跃的”);elements      元素元素.favoritesPanel.classList   班级名册   班级名册.add   添加   添加('active'   “活跃”   “活跃”);elements         元素元素元素.favoritesPanel.classList   班级名册   班级名册   班级名册.add   添加   添加   添加(“活跃的”);elements         元素元素元素.favoritesPanel.classList   班级名册   班级名册   班级名册.add   添加   添加   添加('active'   “活跃”   “活跃”   “活跃”);elements            元素元素元素元素.favoritesPanel.classList   班级名册   班级名册   班级名册   班级名册.add   添加   添加   添加   添加(“活跃的”);
     });
     
-    elements.closeFavorites.addEventListener('click', () => {elements   元素.closeFavorites。addEventListener('click'   “点击”, () => {
-        elements.favoritesPanel.classList.remove('active');elements   元素.favoritesPanel.classList   班级名册.remove   删除(“活跃的”);
+    elements.closeFavorites.addEventListener('click', () => {elements   元素.closeFavorites。addEventListener('click'   “点击”, () => {elements   元素.closeFavorites.addEventListener('click'   “点击”, () => {elements      元素元素.closeFavorites。addEventListener('click'   “点击”   “点击”, () => {elements   元素.closeFavorites.addEventListener('click'   “点击”, () => {elements      元素元素.closeFavorites。addEventListener('click'   “点击”   “点击”, () => {elements      元素元素.closeFavorites.addEventListener('click'   “点击”   “点击”, () => {elements         元素元素元素.closeFavorites。addEventListener('click'   “点击”   “点击”   “点击”, () => {elements   元素.closeFavorites.addEventListener('click'   “点击”, () => {elements      元素元素.closeFavorites。addEventListener('click'   “点击”   “点击”, () => {elements      元素元素.closeFavorites.addEventListener('click'   “点击”   “点击”, () => {elements         元素元素元素.closeFavorites。addEventListener('click'   “点击”   “点击”   “点击”, () => {elements      元素元素.closeFavorites.addEventListener('click'   “点击”   “点击”, () => {elements         元素元素元素.closeFavorites。addEventListener('click'   “点击”   “点击”   “点击”, () => {elements         元素元素元素.closeFavorites.addEventListener('click'   “点击”   “点击”   “点击”, () => {elements            元素元素元素元素.closeFavorites。addEventListener('click'   “点击”   “点击”   “点击”   “点击”, () => {
+        elements.favoritesPanel.classList.remove('active');elements   元素.favoritesPanel.classList   班级名册.remove   删除(“活跃的”);elements   元素.favoritesPanel.classList   班级名册.remove   删除('active'   “活跃”);elements      元素元素.favoritesPanel.classList   班级名册   班级名册.remove   删除   删除(“活跃的”);elements   元素.favoritesPanel.classList   班级名册.remove   删除('active'   “活跃”);elements      元素元素.favoritesPanel.classList   班级名册   班级名册.remove   删除   删除(“活跃的”);elements      元素元素.favoritesPanel.classList   班级名册   班级名册.remove   删除   删除('active'   “活跃”   “活跃”);elements         元素元素元素.favoritesPanel.classList   班级名册   班级名册   班级名册.remove   删除   删除   删除(“活跃的”);elements   元素.favoritesPanel.classList   班级名册.remove   删除('active'   “活跃”);elements      元素元素.favoritesPanel.classList   班级名册   班级名册.remove   删除   删除(“活跃的”);elements      元素元素.favoritesPanel.classList   班级名册   班级名册.remove   删除   删除('active'   “活跃”   “活跃”);elements         元素元素元素.favoritesPanel.classList   班级名册   班级名册   班级名册.remove   删除   删除   删除(“活跃的”);elements      元素元素.favoritesPanel.classList   班级名册   班级名册.remove   删除   删除('active'   “活跃”   “活跃”);elements         元素元素元素.favoritesPanel.classList   班级名册   班级名册   班级名册.remove   删除   删除   删除(“活跃的”);elements         元素元素元素.favoritesPanel.classList   班级名册   班级名册   班级名册.remove   删除   删除   删除('active'   “活跃”   “活跃”   “活跃”);elements            元素元素元素元素.favoritesPanel.classList   班级名册   班级名册   班级名册   班级名册.remove   删除   删除   删除   删除(“活跃的”);
     });
     
     // 视图切换
-    elements.viewBtns.forEach(btn => {elements   元素.viewBtns .“Btn   “ Btn =>{”
-        btn.addEventListener('click', () => {btn。addEventListener('click'   “点击”, () => {
-            elements.viewBtns.forEach(b => b.classList.remove('active'));elements   元素.viewBtns。forEach(b => b. classlist   班级名册 .remove   删除('active'   “活跃”))；
-            btn.classList.add('active');btn.classList   班级名册.add   添加(“活跃的”);
+    elements.viewBtns.forEach(btn => {elements   元素.viewBtns .“Btn   “ Btn =>{”elements.viewBtns .forEach (btn = >将元素元素.Btn =>{&rdquo；   rdquo;
+        btn.addEventListener('click', () => {btn。addEventListener('click'   “点击”, () => {btn。addEventListener('click'   “点击”, () => {btn；addEventListener('click'   “点击” “, () => {btn.addEventListener('click'   “点击”, () => {btn。addEventListener('click'   “点击”   “点击”, () => {btn。addEventListener('click'   “点击”   “点击”, () => {btn；addEventListener('click'   “点击”   “点击” “, () => {btn.addEventListener('click'   “点击”, () => {btn。addEventListener('click'   “点击”   “点击”, () => {btn。addEventListener('click'   “点击”   “点击”, () => {btn；addEventListener('click'   “点击”   “点击” “, () => {btn.addEventListener('click'   “点击”   “点击”, () => {btn。addEventListener('click'   “点击”   “点击”   “点击”, () => {btn。addEventListener('click'   “点击”   “点击”   “点击”, () => {btn；addEventListener('click'   “点击”   “点击”   “点击” “, () => {
+            elements.viewBtns.forEach(b => b.classList.remove('active'));elements   元素.viewBtns。forEach(b => b. classlist   班级名册 .remove   删除('active'   “活跃”))；elements.viewBtns.forEach(b => b.classList   班级名册.remove   删除('active'   “活跃”));elements      元素元素.viewBtns。forEach(b => b. classlist   班级名册   班级名册 .remove   删除   删除('active'   “活跃”   “活跃”))；elements.viewBtns.forEach(b => b.classList   班级名册.remove   删除('active'   “活跃”));elements      元素元素.viewBtns。forEach(b => b. classlist   班级名册   班级名册 .remove   删除   删除('active'   “活跃”   “活跃”))；elements.viewBtns.forEach(b => b.classList   班级名册   班级名册.remove   删除   删除('active'   “活跃”   “活跃”));elements         元素元素元素.viewBtns。forEach(b => b. classlist   班级名册   班级名册   班级名册 .remove   删除   删除   删除('active'   “活跃”   “活跃”   “活跃”))；elements.viewBtns.forEach(b => b.classList   班级名册.remove   删除('active'   “活跃”));elements      元素元素.viewBtns。forEach(b => b. classlist   班级名册   班级名册 .remove   删除   删除('active'   “活跃”   “活跃”))；elements.viewBtns.forEach(b => b.classList   班级名册   班级名册.remove   删除   删除('active'   “活跃”   “活跃”));elements         元素元素元素.viewBtns。forEach(b => b. classlist   班级名册   班级名册   班级名册 .remove   删除   删除   删除('active'   “活跃”   “活跃”   “活跃”))；elements.viewBtns.forEach(b => b.classList   班级名册   班级名册.remove   删除   删除('active'   “活跃”   “活跃”));elements         元素元素元素.viewBtns。forEach(b => b. classlist   班级名册   班级名册   班级名册 .remove   删除   删除   删除('active'   “活跃”   “活跃”   “活跃”))；elements.viewBtns.forEach(b => b.classList   班级名册   班级名册   班级名册.remove   删除   删除   删除('active'   “活跃”   “活跃”   “活跃”));elements            元素元素元素元素.viewBtns。forEach(b => b. classlist   班级名册   班级名册   班级名册   班级名册 .remove   删除   删除   删除   删除('active'   “活跃”   “活跃”   “活跃”   “活跃”))；
+            btn.classList.add('active');btn.classList   班级名册.add   添加(“活跃的”);btn.classList   班级名册.add   添加('active'   “活跃”);btn.classList   班级名册   班级名册.add   添加   添加(“活跃的”);btn.classList   班级名册.add   添加('active'   “活跃”);btn.classList   班级名册   班级名册.add   添加   添加(“活跃的”);btn.classList   班级名册   班级名册.add   添加   添加('active'   “活跃”   “活跃”);btn.classList   班级名册   班级名册   班级名册.add   添加   添加   添加(“活跃的”);btn.classList   班级名册.add   添加('active'   “活跃”);btn.classList   班级名册   班级名册.add   添加   添加(“活跃的”);btn.classList   班级名册   班级名册.add   添加   添加('active'   “活跃”   “活跃”);btn.classList   班级名册   班级名册   班级名册.add   添加   添加   添加(“活跃的”);btn.classList   班级名册   班级名册.add   添加   添加('active'   “活跃”   “活跃”);btn.classList   班级名册   班级名册   班级名册.add   添加   添加   添加(“活跃的”);btn.classList   班级名册   班级名册   班级名册.add   添加   添加   添加('active'   “活跃”   “活跃”   “活跃”);btn.classList   班级名册   班级名册   班级名册   班级名册.add   添加   添加   添加   添加(“活跃的”);
         });
     });
 }
 
 // 启动应用
-document.addEventListener('DOMContentLoaded', init);文档。addEventListener (DOMContentLoaded”内   DOMContentLoaded”内,init   初始化);
+document      文档文档.addEventListener('DOMContentLoaded'   “DOMContentLoaded”内      “DOMContentLoaded”内“DOMContentLoaded”内, init      初始化初始化);文档。addEventListener (DOMContentLoaded”内         DOMContentLoaded”内DOMContentLoaded”内DOMContentLoaded”内,init         初始化初始化初始化);
