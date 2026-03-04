@@ -1,0 +1,12 @@
+name = "auto-repair-hub-api"
+main = "workers/index.js"
+compatibility_date = "2024-01-01"
+
+# KV 命名空间配置（部署后需要手动绑定）
+[[kv_namespaces]]
+binding = "AUTO_REPAIR_KV"
+id = "3b0c068555b44a8ebd66ba9aeadebd49"
+
+# 环境变量
+[vars]
+ENVIRONMENT = "production"

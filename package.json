@@ -1,0 +1,22 @@
+{
+  "name": "auto-repair-hub",
+  "version": "1.0.0",
+  "description": "汽车维修资源库 - 全网维修手册与电路图搜索平台",
+  "main": "index.html",
+  "scripts": {
+    "dev": "npx wrangler pages dev public",
+    "deploy": "npx wrangler pages deploy public",
+    "build": "echo 'Static site - no build needed'"
+  },
+  "keywords": [
+    "汽车维修",
+    "电路图",
+    "维修手册",
+    "汽车资源"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}
