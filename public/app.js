@@ -1,12 +1,12 @@
 /**
- * 汽车维修资源库 - 主应用逻辑
- * 功能：搜索、分类浏览、收藏、预览
+ * 汽车维修资源库 - 主应用逻辑（对接 Cloudflare Worker API）
+ * 功能：搜索、分类浏览、收藏（云端同步）、预览
  */
 
 // 配置
 const CONFIG = {
-    // Cloudflare Worker API 地址（部署后更新）
-    API_BASE: 'https://auto-repair-hub-api.liu82ni.workers.dev', // 留空表示使用本地数据，部署后填写 Worker 地址
+    // Cloudflare Worker API 地址（已配置）
+    API_BASE: 'https://auto-repair-hub-api.liu82ni.workers.dev',
     
     // 搜索源配置
     SEARCH_ENGINES: [
@@ -15,7 +15,7 @@ const CONFIG = {
         { name: 'Google', url: 'https://www.google.com/search?q=' }
     ],
     
-    // 默认资源数据（当API不可用时使用）
+    // 默认资源数据（API 不可用时兜底）
     DEFAULT_RESOURCES: []
 };
 
@@ -23,13 +23,14 @@ const CONFIG = {
 const state = {
     currentCategory: 'all',
     currentFilter: 'all',
-    favorites: JSON.parse(localStorage.getItem('favorites') || '[]'),
-    history: JSON.parse(localStorage.getItem('history') || '[]'),
+    favorites: [], // 从 API 获取，不再依赖 localStorage
+    history: [],   // 从 API 获取，不再依赖 localStorage
     resources: [],
-    isSearching: false
+    isSearching: false,
+    isApiAvailable: true // 标记 API 是否可用
 };
 
-// 汽车品牌分类数据
+// 汽车品牌分类数据（不变）
 const CATEGORIES = [
     {
         id: 'german',
@@ -99,9 +100,8 @@ const CATEGORIES = [
     }
 ];
 
-// 资源数据库（包含全网可用链接）
+// 资源数据库（本地兜底）
 const RESOURCES_DB = [
-    // 大众系列
     {
         id: 'vw-sagitar-manual',
         title: '大众速腾维修手册（2019-2024）',
@@ -161,35 +161,99 @@ const elements = {
     viewBtns: document.querySelectorAll('.view-btn')
 };
 
-// 初始化
-function init() {
+// ====================== API 调用函数（核心新增） ======================
+// 获取收藏（从 Worker API）
+async function getFavorites() {
+    try {
+        const res = await fetch(`${CONFIG.API_BASE}/api/favorites`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+        if (data.success) {
+            state.favorites = data.data || [];
+            updateFavCount();
+            renderFavorites();
+            return state.favorites;
+        } else {
+            throw new Error(data.error || '获取收藏失败');
+        }
+    } catch (error) {
+        console.error('API 获取收藏失败，使用本地数据:', error);
+        state.isApiAvailable = false;
+        state.favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+        return state.favorites;
+    }
+}
+
+// 添加收藏（调用 Worker API）
+async function addFavoriteToApi(resource) {
+    if (!state.isApiAvailable) return false;
+    
+    try {
+        const res = await fetch(`${CONFIG.API_BASE}/api/favorites`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id: resource.id,
+                title: resource.title,
+                type: resource.type,
+                thumbnail: resource.thumbnail,
+                url: resource.url,
+                description: resource.description
+            })
+        });
+        const data = await res.json();
+        return data.success;
+    } catch (error) {
+        console.error('API 添加收藏失败:', error);
+        return false;
+    }
+}
+
+// 移除收藏（调用 Worker API）
+async function removeFavoriteFromApi(id) {
+    if (!state.isApiAvailable) return false;
+    
+    try {
+        const res = await fetch(`${CONFIG.API_BASE}/api/favorites?id=${id}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+        return data.success;
+    } catch (error) {
+        console.error('API 移除收藏失败:', error);
+        return false;
+    }
+}
+
+// 添加搜索历史（调用 Worker API）
+async function addHistoryToApi(query) {
+    if (!state.isApiAvailable) return;
+    
+    try {
+        await fetch(`${CONFIG.API_BASE}/api/history`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query })
+        });
+    } catch (error) {
+        console.error('API 添加历史失败:', error);
+    }
+}
+
+// ====================== 原有功能改造 ======================
+// 初始化（优先加载 API 数据）
+async function init() {
     renderCategories();
     renderResources();
-    renderFavorites();
+    await getFavorites(); // 优先从 API 加载收藏
     updateFavCount();
     bindEvents();
 }
 
-// 渲染分类列表
-function renderCategories() {
-    elements.categoryList.innerHTML = CATEGORIES.map(cat => `
-        <li class="category-item">
-            <div class="category-header" data-category="${cat.id}">
-                <span><i class="fas ${cat.icon}"></i> ${cat.name}</span>
-                <i class="fas fa-chevron-right"></i>
-            </div>
-            <ul class="subcategory-list">
-                ${cat.brands.map(brand => `
-                    <li class="subcategory-item" data-brand="${brand.id}">
-                        ${brand.name}
-                    </li>
-                `).join('')}
-            </ul>
-        </li>
-    `).join('');
-}
-
-// 渲染资源卡片
+// 渲染资源卡片（不变）
 function renderResources(brandFilter = null) {
     let resources = RESOURCES_DB;
     
@@ -229,7 +293,7 @@ function renderResources(brandFilter = null) {
     `).join('');
 }
 
-// 搜索功能
+// 搜索功能（改造：调用 API 记录历史）
 async function performSearch(query) {
     if (!query.trim()) {
         showToast('请输入搜索内容');
@@ -263,15 +327,18 @@ async function performSearch(query) {
         id: r.id
     })), ...webResults];
     
-    setTimeout(() => {
+    setTimeout(async () => {
         renderSearchResults(allResults);
         elements.loading.style.display = 'none';
         state.isSearching = false;
-        addToHistory(query);
+        // 调用 API 记录历史（新增）
+        await addHistoryToApi(query);
+        // 本地历史兜底
+        addToLocalHistory(query);
     }, 1500);
 }
 
-// 生成全网搜索结果
+// 生成全网搜索结果（不变）
 function generateWebSearchResults(query) {
     const results = [];
     const searchSites = [
@@ -296,7 +363,7 @@ function generateWebSearchResults(query) {
     return results;
 }
 
-// 渲染搜索结果
+// 渲染搜索结果（不变）
 function renderSearchResults(results) {
     if (results.length === 0) {
         elements.searchResults.innerHTML = `
@@ -311,7 +378,7 @@ function renderSearchResults(results) {
     
     elements.searchResults.innerHTML = results.map(result => `
         <div class="result-item">
-            <div class="result-title" onclick="${result.isLocal ? `previewResource('${result.id}')` : `window.open('${result.url}', '_blank')`}">
+            <div class="result-title" onclick="${result.isLocal ? `previewResource('${result.id}')` : `openExternalLink('${result.url}')`}">
                 ${result.title}
             </div>
             <div class="result-url">
@@ -319,7 +386,7 @@ function renderSearchResults(results) {
             </div>
             <div class="result-desc">${result.desc}</div>
             <div class="result-actions">
-                <span class="result-action" onclick="window.open('${result.url}', '_blank')">
+                <span class="result-action" onclick="openExternalLink('${result.url}')">
                     <i class="fas fa-external-link-alt"></i> 访问链接
                 </span>
                 ${result.isLocal ? `
@@ -339,39 +406,69 @@ function renderSearchResults(results) {
     `).join('');
 }
 
-// 预览资源
+// 预览资源（改造：修复空白页）
 function previewResource(id) {
     const resource = RESOURCES_DB.find(r => r.id === id);
     if (!resource) return;
     
     elements.modalTitle.textContent = resource.title;
     
+    // 优先在模态框内预览，避免跳转空白页
     if (resource.previewUrl) {
         elements.previewFrame.src = resource.previewUrl;
         elements.previewModal.classList.add('active');
     } else {
-        window.open(resource.url, '_blank');
+        // 跳转前提示
+        showToast('正在打开资源页面...');
+        openExternalLink(resource.url);
     }
 }
 
-// 打开资源
+// 打开资源（改造：添加加载提示）
 function openResource(id) {
     const resource = RESOURCES_DB.find(r => r.id === id);
     if (resource) {
-        window.open(resource.url, '_blank');
+        showToast('正在打开资源页面...');
+        openExternalLink(resource.url);
     }
 }
 
-// 收藏功能
-function toggleFavorite(id) {
+// 安全打开外部链接（新增：解决空白页）
+function openExternalLink(url) {
+    try {
+        // 用新标签页打开，避免当前页面跳转
+        const newTab = window.open(url, '_blank');
+        if (!newTab) {
+            // 弹窗被拦截时提示
+            showToast('链接打开失败，请允许弹窗权限');
+            copyLink(url); // 自动复制链接
+        }
+    } catch (error) {
+        showToast('链接打开失败，已复制链接到剪贴板');
+        copyLink(url);
+    }
+}
+
+// 收藏功能（改造：对接 API）
+async function toggleFavorite(id) {
+    const resource = RESOURCES_DB.find(r => r.id === id);
+    if (!resource) return;
+    
     const index = state.favorites.findIndex(f => f.id === id);
     
     if (index > -1) {
-        state.favorites.splice(index, 1);
-        showToast('已取消收藏');
+        // 移除收藏
+        const success = state.isApiAvailable ? await removeFavoriteFromApi(id) : true;
+        if (success) {
+            state.favorites.splice(index, 1);
+            showToast('已取消收藏');
+        } else {
+            showToast('取消收藏失败，使用本地数据');
+        }
     } else {
-        const resource = RESOURCES_DB.find(r => r.id === id);
-        if (resource) {
+        // 添加收藏
+        const success = state.isApiAvailable ? await addFavoriteToApi(resource) : true;
+        if (success) {
             state.favorites.push({
                 id: resource.id,
                 title: resource.title,
@@ -380,15 +477,19 @@ function toggleFavorite(id) {
                 addedAt: new Date().toISOString()
             });
             showToast('已添加到收藏');
+        } else {
+            showToast('添加收藏失败，使用本地数据');
         }
     }
     
+    // 本地兜底存储
     localStorage.setItem('favorites', JSON.stringify(state.favorites));
     updateFavCount();
     renderFavorites();
     renderResources();
 }
 
+// 辅助函数（不变/新增）
 function isFavorited(id) {
     return state.favorites.some(f => f.id === id);
 }
@@ -427,20 +528,15 @@ function renderFavorites() {
     `).join('');
 }
 
-// 历史记录
-function addToHistory(query) {
-    const item = {
-        query,
-        time: new Date().toISOString()
-    };
-    state.history.unshift(item);
-    if (state.history.length > 20) {
-        state.history = state.history.slice(0, 20);
-    }
-    localStorage.setItem('history', JSON.stringify(state.history));
+// 本地历史（兜底）
+function addToLocalHistory(query) {
+    const history = JSON.parse(localStorage.getItem('history') || '[]');
+    const item = { query, time: new Date().toISOString() };
+    history.unshift(item);
+    if (history.length > 20) history = history.slice(0, 20);
+    localStorage.setItem('history', JSON.stringify(history));
 }
 
-// 工具函数
 function showToast(message) {
     elements.toast.textContent = message;
     elements.toast.classList.add('show');
@@ -457,7 +553,7 @@ function copyLink(url) {
     });
 }
 
-// 事件绑定
+// 事件绑定（不变）
 function bindEvents() {
     // 搜索
     elements.searchBtn.addEventListener('click', () => {
@@ -488,16 +584,16 @@ function bindEvents() {
         const header = e.target.closest('.category-header');
         if (header) {
             header.classList.toggle('expanded');
-            const subList = header.nextElementSibling;
+            const   常量   常量 subList = header.nextElementSibling;
             subList.classList.toggle('show');
         }
         
-        const subItem = e.target.closest('.subcategory-item');
+        const   常量 subItem = e.target.closest('.subcategory-item');
         if (subItem) {
             document.querySelectorAll('.subcategory-item').forEach(i => i.classList.remove('active'));
             subItem.classList.add('active');
             
-            const brand = subItem.dataset.brand;
+            const   常量 brand = subItem.dataset.brand;
             elements.contentTitle.textContent = `${subItem.textContent} 相关资源`;
             elements.searchResults.classList.remove('active');
             elements.resourceGrid.style.display = 'grid';
@@ -536,5 +632,5 @@ function bindEvents() {
     });
 }
 
-// 启动应用
+// 启动应用（改为异步）
 document.addEventListener('DOMContentLoaded', init);
