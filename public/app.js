@@ -4,15 +4,15 @@
  */
 
 // 配置
-const CONFIG = {
+const   常量   常量   配置       配置配置CONFIG = {
     // Cloudflare Worker API 地址（已配置）
     API_BASE: 'https://auto-repair-hub-api.liu82ni.workers.dev',
     
     // 搜索源配置
-    SEARCH_ENGINES: [
-        { name: '百度', url: 'https://www.baidu.com/s?wd=' },
-        { name: '必应', url: 'https://www.bing.com/search?q=' },
-        { name: 'Google', url: 'https://www.google.com/search?q=' }
+       SEARCH_ENGINES:(SEARCH_ENGINES: [
+        { name   名字   名字: '百度', url: 'https://www.baidu.com/s?wd=' },
+        { name   名字   名字: '必应', url: 'https://www.bing.com/search?q=' },
+        {名称：‘谷歌’，url: 'https://www.google.com/search?q='}{ name   名字   名字: 'Google'   “谷歌”   “谷歌”, url: 'https://www.google.com/search?q=' }
     ],
     
     // 默认资源数据（API 不可用时兜底）
@@ -20,20 +20,20 @@ const CONFIG = {
 };
 
 // 状态管理
-const state = {
-    currentCategory: 'all',
-    currentFilter: 'all',
-    favorites: [], // 从 API 获取，不再依赖 localStorage
-    history: [],   // 从 API 获取，不再依赖 localStorage
-    resources: [],
-    isSearching: false,
-    isApiAvailable: true // 标记 API 是否可用
+const   常量   常量      状态Const state         状态状态状态 = { state      状态状态 = {
+       currentCategory:“所有”,currentCategory: 'all'   “所有”   “所有”,
+       currentFilter:’all’   &rsquo all’   &rsquo all’,currentFilter: 'all'   “所有”   “所有”,
+    favorites   最喜欢的   最喜欢的: [], // 从 API 获取，不再依赖 localStorage
+    history   历史   历史: [],   // 从 API 获取，不再依赖 localStorage
+       资源:[],resources   资源   资源   资源: [],
+       isSearching:版本调教,isSearching: false   假   假,
+    isApiAvailable: true   真正的   真正的 // 标记 API 是否可用
 };
 
 // 汽车品牌分类数据（扩展版，含新能源）
-const CATEGORIES = [
+const   常量   常量   类别       类别类别CATEGORIES = [
     {
-        id: 'german',
+           id:“德国”,id: 'german'   “德国”   “德国”,
         name: '德系车',
         icon: 'fa-car',
         brands: [
