@@ -1108,13 +1108,13 @@ function bindEvents() {
     // 分类展开/收起
     elements.categoryList.addEventListener('click', (e) => {
         const header = e.target.closest('.category-header');
-        * 汽车维修资源库 - 主应用逻辑（对接 Cloudflare Worker    工人API   代理访问）if   如果 (header   头) {
-            header   头.classList   班级名册.toggle   切换('expanded'   “扩展”);
+        if   如果 (header   头) {
+            header   头.classList   班级名册.toggle   切换('expanded'   “扩展”);header   头.classList   班级名册.toggle   切换(扩大);
             const   常量   子表 subList      子表子表 = header   头.nextElementSibling;const   常量   子表 subList      子表子表 = header   头.nextElementSibling；   nextElementSibling;
             subList.classList.toggle('show');subList   子表.classList   班级名册.toggle   切换(显示);
         }
         
-        const subItem = e.target.closest('.subcategory-item');const   常量 subItem = e.target   目标.close   关闭 ('.subcategory-item'   “.subcategory   子类别-item”   item”   item”   item”   item”)；
+        const subItem = e.target.closest('.subcategory-item');const   常量 subItem = e.target   目标.close   关闭 ('.subcategory-item'   “.subcategory   子类别-item”   item”   item”)；
         if (subItem) {
             document.querySelectorAll('.subcategory-item').forEach(i => i.classList.remove('active'));document   文档.querySelectorAll(“.subcategory   子类别-item”   item”)。forEach(i   我 => i   我. classlist   班级名册 .remove   删除('active'   “活跃”))；
             subItem.classList.add('active');subItem.classList   班级名册.add   添加(“活跃的”);
