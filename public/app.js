@@ -1,6 +1,6 @@
 /**
- * 汽车维修资源库 - 主应用逻辑（对接 Cloudflare Worker API）
- * 功能：搜索、分类浏览、收藏（云端同步）、预览
+ * 汽车维修资源库 - 主应用逻辑（对接 Cloudflare Worker API + 代理访问）
+ * 功能：搜索、分类浏览、收藏（云端同步）、预览（代理访问）
  */
 
 // 配置
@@ -30,7 +30,7 @@ const state = {
     isApiAvailable: true // 标记 API 是否可用
 };
 
-// 汽车品牌分类数据（不变）
+// 汽车品牌分类数据
 const CATEGORIES = [
     {
         id: 'german',
@@ -161,7 +161,7 @@ const elements = {
     viewBtns: document.querySelectorAll('.view-btn')
 };
 
-// ====================== API 调用函数（核心新增） ======================
+// ====================== API 调用函数 ======================
 // 获取收藏（从 Worker API）
 async function getFavorites() {
     try {
@@ -243,7 +243,20 @@ async function addHistoryToApi(query) {
     }
 }
 
-// ====================== 原有功能改造 ======================
+// 记录资源访问量（调用 Worker API）
+async function recordResourceView(resourceId) {
+    try {
+        await fetch(`${CONFIG.API_BASE}/api/resource/view`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ resourceId })
+        });
+    } catch (error) {
+        console.error('记录访问量失败:', error);
+    }
+}
+
+// ====================== 核心功能函数 ======================
 // 初始化（优先加载 API 数据）
 async function init() {
     renderCategories();
@@ -253,7 +266,7 @@ async function init() {
     bindEvents();
 }
 
-// 渲染资源卡片（不变）
+// 渲染资源卡片
 function renderResources(brandFilter = null) {
     let resources = RESOURCES_DB;
     
@@ -293,7 +306,7 @@ function renderResources(brandFilter = null) {
     `).join('');
 }
 
-// 搜索功能（改造：调用 API 记录历史）
+// 搜索功能
 async function performSearch(query) {
     if (!query.trim()) {
         showToast('请输入搜索内容');
@@ -331,14 +344,14 @@ async function performSearch(query) {
         renderSearchResults(allResults);
         elements.loading.style.display = 'none';
         state.isSearching = false;
-        // 调用 API 记录历史（新增）
+        // 调用 API 记录历史
         await addHistoryToApi(query);
         // 本地历史兜底
         addToLocalHistory(query);
     }, 1500);
 }
 
-// 生成全网搜索结果（不变）
+// 生成全网搜索结果
 function generateWebSearchResults(query) {
     const results = [];
     const searchSites = [
@@ -363,7 +376,7 @@ function generateWebSearchResults(query) {
     return results;
 }
 
-// 渲染搜索结果（不变）
+// 渲染搜索结果
 function renderSearchResults(results) {
     if (results.length === 0) {
         elements.searchResults.innerHTML = `
@@ -378,7 +391,7 @@ function renderSearchResults(results) {
     
     elements.searchResults.innerHTML = results.map(result => `
         <div class="result-item">
-            <div class="result-title" onclick="${result.isLocal ? `previewResource('${result.id}')` : `openExternalLink('${result.url}')`}">
+            <div class="result-title" onclick="${result.isLocal ? `previewResource('${result.id}')` : `openProxyLink('${result.url}')`}">
                 ${result.title}
             </div>
             <div class="result-url">
@@ -386,7 +399,7 @@ function renderSearchResults(results) {
             </div>
             <div class="result-desc">${result.desc}</div>
             <div class="result-actions">
-                <span class="result-action" onclick="openExternalLink('${result.url}')">
+                <span class="result-action" onclick="openProxyLink('${result.url}')">
                     <i class="fas fa-external-link-alt"></i> 访问链接
                 </span>
                 ${result.isLocal ? `
@@ -406,50 +419,62 @@ function renderSearchResults(results) {
     `).join('');
 }
 
-// 预览资源（改造：修复空白页）
+// 预览资源（通过 Worker 代理访问）
 function previewResource(id) {
     const resource = RESOURCES_DB.find(r => r.id === id);
     if (!resource) return;
     
     elements.modalTitle.textContent = resource.title;
+    // 构建代理请求 URL
+    const proxyUrl = `${CONFIG.API_BASE}/api/proxy?url=${encodeURIComponent(resource.url)}`;
+    // 在模态框中加载代理后的内容
+    elements.previewFrame.src = proxyUrl;
+    elements.previewModal.classList.add('active');
     
-    // 优先在模态框内预览，避免跳转空白页
-    if (resource.previewUrl) {
-        elements.previewFrame.src = resource.previewUrl;
-        elements.previewModal.classList.add('active');
-    } else {
-        // 跳转前提示
-        showToast('正在打开资源页面...');
-        openExternalLink(resource.url);
-    }
+    // 记录资源访问量
+    recordResourceView(resource.id);
 }
 
-// 打开资源（改造：添加加载提示）
+// 打开资源（通过 Worker 代理访问）
 function openResource(id) {
     const resource = RESOURCES_DB.find(r => r.id === id);
     if (resource) {
-        showToast('正在打开资源页面...');
-        openExternalLink(resource.url);
+        const proxyUrl = `${CONFIG.API_BASE}/api/proxy?url=${encodeURIComponent(resource.url)}`;
+        try {
+            const newTab = window.open(proxyUrl, '_blank');
+            if (!newTab) {
+                showToast('链接打开失败，已复制代理链接到剪贴板');
+                copyLink(proxyUrl);
+            } else {
+                showToast('正在通过代理打开资源...');
+            }
+        } catch (error) {
+            showToast('打开失败，已复制代理链接');
+            copyLink(proxyUrl);
+        }
+        // 记录资源访问量
+        recordResourceView(resource.id);
     }
 }
 
-// 安全打开外部链接（新增：解决空白页）
-function openExternalLink(url) {
+// 外部链接通过代理打开
+function openProxyLink(url) {
+    const proxyUrl = `${CONFIG.API_BASE}/api/proxy?url=${encodeURIComponent(url)}`;
     try {
-        // 用新标签页打开，避免当前页面跳转
-        const newTab = window.open(url, '_blank');
+        const newTab = window.open(proxyUrl, '_blank');
         if (!newTab) {
-            // 弹窗被拦截时提示
-            showToast('链接打开失败，请允许弹窗权限');
-            copyLink(url); // 自动复制链接
+            showToast('链接打开失败，已复制代理链接');
+            copyLink(proxyUrl);
+        } else {
+            showToast('正在通过代理打开链接...');
         }
     } catch (error) {
-        showToast('链接打开失败，已复制链接到剪贴板');
-        copyLink(url);
+        showToast('打开失败，已复制代理链接');
+        copyLink(proxyUrl);
     }
 }
 
-// 收藏功能（改造：对接 API）
+// 收藏功能（对接 API）
 async function toggleFavorite(id) {
     const resource = RESOURCES_DB.find(r => r.id === id);
     if (!resource) return;
@@ -489,7 +514,7 @@ async function toggleFavorite(id) {
     renderResources();
 }
 
-// 辅助函数（不变/新增）
+// ====================== 辅助函数 ======================
 function isFavorited(id) {
     return state.favorites.some(f => f.id === id);
 }
@@ -553,7 +578,7 @@ function copyLink(url) {
     });
 }
 
-// 事件绑定（不变）
+// ====================== 事件绑定 ======================
 function bindEvents() {
     // 搜索
     elements.searchBtn.addEventListener('click', () => {
@@ -582,55 +607,55 @@ function bindEvents() {
     // 分类展开/收起
     elements.categoryList.addEventListener('click', (e) => {
         const header = e.target.closest('.category-header');
-        if (header) {
-            header.classList.toggle('expanded');
-            const   常量   常量 subList = header.nextElementSibling;
+        if   如果 (header   头) {
+            header   头.classList   班级名册.toggle   切换('expanded'   “扩展”);
+            const   常量   子表 subList      子表子表 = header   头.nextElementSibling;
             subList.classList.toggle('show');
         }
         
-        const   常量 subItem = e.target.closest('.subcategory-item');
+        const subItem = e.target.closest('.subcategory-item');
         if (subItem) {
             document.querySelectorAll('.subcategory-item').forEach(i => i.classList.remove('active'));
             subItem.classList.add('active');
             
-            const   常量 brand = subItem.dataset.brand;
+            const brand = subItem.dataset.brand;
             elements.contentTitle.textContent = `${subItem.textContent} 相关资源`;
             elements.searchResults.classList.remove('active');
             elements.resourceGrid.style.display = 'grid';
-            renderResources(brand);
+            renderResources(brand);   renderResources(品牌);
         }
     });
     
     // 模态框
-    elements.modalClose.addEventListener('click', () => {
-        elements.previewModal.classList.remove('active');
+    elements.modalClose.addEventListener('click', () => {elements   元素.modalClose。addEventListener('click'   “点击”, () => {
+        elements.previewModal.classList.remove('active');elements   元素.previewModal.classList   班级名册.remove   删除(“活跃的”);
         elements.previewFrame.src = '';
     });
     
-    elements.previewModal.addEventListener('click', (e) => {
-        if (e.target === elements.previewModal) {
-            elements.previewModal.classList.remove('active');
+    elements.previewModal.addEventListener('click', (e) => {elements   元素.previewModal。addEventListener('click'   “点击”, (e) => {
+        if (e.target === elements.previewModal) {If （e.t rtarget === elements）。previewModal) {
+            elements.previewModal.classList.remove('active');elements   元素.previewModal.classList   班级名册.remove   删除(“活跃的”);
             elements.previewFrame.src = '';
         }
     });
     
     // 收藏面板
-    elements.favoritesBtn.addEventListener('click', () => {
-        elements.favoritesPanel.classList.add('active');
+    elements.favoritesBtn.addEventListener('click', () => {elements   元素.favoritesBtn。addEventListener('click'   “点击”, () => {
+        elements.favoritesPanel.classList.add('active');elements   元素.favoritesPanel.classList   班级名册.add   添加(“活跃的”);
     });
     
-    elements.closeFavorites.addEventListener('click', () => {
-        elements.favoritesPanel.classList.remove('active');
+    elements.closeFavorites.addEventListener('click', () => {elements   元素.closeFavorites。addEventListener('click'   “点击”, () => {
+        elements.favoritesPanel.classList.remove('active');elements   元素.favoritesPanel.classList   班级名册.remove   删除(“活跃的”);
     });
     
     // 视图切换
-    elements.viewBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            elements.viewBtns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+    elements.viewBtns.forEach(btn => {elements   元素.viewBtns .“Btn =>{”
+        btn.addEventListener('click', () => {btn。addEventListener('click'   “点击”, () => {
+            elements.viewBtns.forEach(b => b.classList.remove('active'));elements   元素.viewBtns。forEach(b => b. classlist .remove   删除('active'   “活跃”))；
+            btn.classList.add('active');btn.classList   班级名册.add   添加(“活跃的”);
         });
     });
 }
 
-// 启动应用（改为异步）
-document.addEventListener('DOMContentLoaded', init);
+// 启动应用
+document.addEventListener('DOMContentLoaded', init);文档。addEventListener (DOMContentLoaded”内,init   初始化);
